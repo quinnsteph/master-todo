@@ -54,7 +54,19 @@ export default function TodoApp() {
 		refresh();
 	}
 
-	async function signIn() {
+	const [email, setEmail] = useState('');
+	const [password, setPassword] = useState('');
+	const [loading, setLoading] = useState(false);
+
+	async function signIn(e) {
+		e.preventDefault();
+		setLoading(true);
+		const { error } = await supabase.auth.signInWithPassword({ email, password });
+		if (error) alert(error.message);
+		setLoading(false);
+	}
+
+	async function signInWithGoogle() {
 		const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
 		if (error) alert(error.message);
 	}
@@ -65,9 +77,33 @@ export default function TodoApp() {
 
 	if (!session) {
 		return (
-			<div style={{ padding: 24 }}>
+			<div style={{ padding: 24, maxWidth: 400, margin: '0 auto' }}>
 				<h1>Master TODO</h1>
-				<button onClick={signIn}>Sign in with Google</button>
+				<form onSubmit={signIn} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+					<input
+						type="email"
+						placeholder="Email"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+						required
+						style={{ padding: 8 }}
+					/>
+					<input
+						type="password"
+						placeholder="Password"
+						value={password}
+						onChange={(e) => setPassword(e.target.value)}
+						required
+						style={{ padding: 8 }}
+					/>
+					<button type="submit" disabled={loading} style={{ padding: 8 }}>
+						{loading ? 'Signing in...' : 'Sign in'}
+					</button>
+				</form>
+				<div style={{ marginTop: 16, textAlign: 'center' }}>
+					<p>Or</p>
+					<button onClick={signInWithGoogle} style={{ padding: 8 }}>Sign in with Google</button>
+				</div>
 			</div>
 		);
 	}
