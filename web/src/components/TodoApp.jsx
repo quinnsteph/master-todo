@@ -1,135 +1,311 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
 
 export default function TodoApp() {
-	const [session, setSession] = useState(null);
 	const [todos, setTodos] = useState([]);
 	const [input, setInput] = useState('');
-	const accessToken = session?.access_token;
+	const [filter, setFilter] = useState('all'); // all, active, completed
 
+	// Load todos from localStorage on mount
 	useEffect(() => {
-		supabase.auth.getSession().then(({ data }) => setSession(data.session));
-		const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => setSession(sess));
-		return () => sub.subscription.unsubscribe();
+		const savedTodos = localStorage.getItem('todos');
+		if (savedTodos) {
+			setTodos(JSON.parse(savedTodos));
+		}
 	}, []);
 
+	// Save todos to localStorage whenever they change
 	useEffect(() => {
-		if (!accessToken) return;
-		refresh();
-	}, [accessToken]);
+		localStorage.setItem('todos', JSON.stringify(todos));
+	}, [todos]);
 
-	async function refresh() {
-		const res = await fetch('/api/todos', { headers: { Authorization: `Bearer ${accessToken}` } });
-		if (!res.ok) return setTodos([]);
-		const data = await res.json();
-		setTodos(data || []);
-	}
-
-	async function addTodo(e) {
+	function addTodo(e) {
 		e.preventDefault();
 		if (!input.trim()) return;
-		await fetch('/api/todos', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-			body: JSON.stringify({ text: input.trim() }),
-		});
+		
+		const newTodo = {
+			id: Date.now().toString(),
+			text: input.trim(),
+			completed: false,
+			createdAt: new Date().toISOString()
+		};
+		
+		setTodos([newTodo, ...todos]);
 		setInput('');
-		refresh();
 	}
 
-	async function toggleTodo(id, completed) {
-		await fetch(`/api/todos/${id}`, {
-			method: 'PATCH',
-			headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-			body: JSON.stringify({ completed }),
-		});
-		refresh();
+	function toggleTodo(id) {
+		setTodos(todos.map(todo => 
+			todo.id === id ? { ...todo, completed: !todo.completed } : todo
+		));
 	}
 
-	async function deleteTodo(id) {
-		await fetch(`/api/todos/${id}`, {
-			method: 'DELETE',
-			headers: { Authorization: `Bearer ${accessToken}` },
-		});
-		refresh();
+	function deleteTodo(id) {
+		setTodos(todos.filter(todo => todo.id !== id));
 	}
 
-	const [email, setEmail] = useState('');
-	const [password, setPassword] = useState('');
-	const [loading, setLoading] = useState(false);
-
-	async function signIn(e) {
-		e.preventDefault();
-		setLoading(true);
-		const { error } = await supabase.auth.signInWithPassword({ email, password });
-		if (error) alert(error.message);
-		setLoading(false);
+	function clearCompleted() {
+		setTodos(todos.filter(todo => !todo.completed));
 	}
 
-	async function signInWithGoogle() {
-		const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-		if (error) alert(error.message);
-	}
+	const filteredTodos = todos.filter(todo => {
+		if (filter === 'active') return !todo.completed;
+		if (filter === 'completed') return todo.completed;
+		return true;
+	});
 
-	async function signOut() {
-		await supabase.auth.signOut();
-	}
-
-	if (!session) {
-		return (
-			<div style={{ padding: 24, maxWidth: 400, margin: '0 auto' }}>
-				<h1>Master TODO</h1>
-				<form onSubmit={signIn} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-					<input
-						type="email"
-						placeholder="Email"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						required
-						style={{ padding: 8 }}
-					/>
-					<input
-						type="password"
-						placeholder="Password"
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						required
-						style={{ padding: 8 }}
-					/>
-					<button type="submit" disabled={loading} style={{ padding: 8 }}>
-						{loading ? 'Signing in...' : 'Sign in'}
-					</button>
-				</form>
-				<div style={{ marginTop: 16, textAlign: 'center' }}>
-					<p>Or</p>
-					<button onClick={signInWithGoogle} style={{ padding: 8 }}>Sign in with Google</button>
-				</div>
-			</div>
-		);
-	}
+	const activeCount = todos.filter(t => !t.completed).length;
+	const completedCount = todos.filter(t => t.completed).length;
 
 	return (
-		<div style={{ padding: 24, maxWidth: 600 }}>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-				<h1>Master TODO</h1>
-				<div>
-					<span style={{ marginRight: 12 }}>{session.user.email}</span>
-					<button onClick={signOut}>Sign out</button>
-				</div>
-			</div>
-			<form onSubmit={addTodo} style={{ marginTop: 16, marginBottom: 16 }}>
-				<input value={input} onChange={(e) => setInput(e.target.value)} placeholder="New todo" style={{ width: '70%' }} />
-				<button type="submit" style={{ marginLeft: 8 }}>Add</button>
+		<div style={styles.container}>
+			<header style={styles.header}>
+				<h1 style={styles.title}>Master TODO</h1>
+				<p style={styles.subtitle}>Simple, fast, private todo management</p>
+			</header>
+
+			<form onSubmit={addTodo} style={styles.form}>
+				<input 
+					value={input} 
+					onChange={(e) => setInput(e.target.value)} 
+					placeholder="What needs to be done?" 
+					style={styles.input}
+					autoFocus
+				/>
+				<button type="submit" style={styles.addButton}>
+					Add
+				</button>
 			</form>
-			<ul>
-				{todos.map((t) => (
-					<li key={t.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-						<input type="checkbox" checked={t.completed} onChange={(e) => toggleTodo(t.id, e.target.checked)} />
-						<span style={{ marginLeft: 8, textDecoration: t.completed ? 'line-through' : 'none' }}>{t.text}</span>
-						<button onClick={() => deleteTodo(t.id)} style={{ marginLeft: 'auto' }}>Delete</button>
+
+			<div style={styles.filters}>
+				<button 
+					onClick={() => setFilter('all')} 
+					style={{...styles.filterButton, ...(filter === 'all' ? styles.activeFilter : {})}}
+				>
+					All ({todos.length})
+				</button>
+				<button 
+					onClick={() => setFilter('active')} 
+					style={{...styles.filterButton, ...(filter === 'active' ? styles.activeFilter : {})}}
+				>
+					Active ({activeCount})
+				</button>
+				<button 
+					onClick={() => setFilter('completed')} 
+					style={{...styles.filterButton, ...(filter === 'completed' ? styles.activeFilter : {})}}
+				>
+					Done ({completedCount})
+				</button>
+			</div>
+
+			<ul style={styles.list}>
+				{filteredTodos.length === 0 ? (
+					<li style={styles.emptyState}>
+						{filter === 'completed' ? 'No completed todos' : 
+						 filter === 'active' ? 'No active todos' : 
+						 'No todos yet. Add one above!'}
 					</li>
-				))}
+				) : (
+					filteredTodos.map((todo) => (
+						<li key={todo.id} style={styles.todoItem}>
+							<label style={styles.todoLabel}>
+								<input 
+									type="checkbox" 
+									checked={todo.completed} 
+									onChange={() => toggleTodo(todo.id)}
+									style={styles.checkbox}
+								/>
+								<span style={{
+									...styles.todoText, 
+									...(todo.completed ? styles.completedText : {})
+								}}>
+									{todo.text}
+								</span>
+							</label>
+							<button 
+								onClick={() => deleteTodo(todo.id)} 
+								style={styles.deleteButton}
+								aria-label="Delete todo"
+							>
+								×
+							</button>
+						</li>
+					))
+				)}
 			</ul>
+
+			{completedCount > 0 && (
+				<button onClick={clearCompleted} style={styles.clearButton}>
+					Clear completed ({completedCount})
+				</button>
+			)}
+
+			<footer style={styles.footer}>
+				<p style={styles.footerText}>
+					Data stored locally • No account needed • 
+					<a href="https://github.com/quinnsteph/master-todo" style={styles.link}> GitHub</a>
+				</p>
+			</footer>
 		</div>
 	);
 }
+
+const styles = {
+	container: {
+		padding: '20px',
+		maxWidth: '600px',
+		margin: '0 auto',
+		fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif',
+		minHeight: '100vh',
+		backgroundColor: '#f5f5f5'
+	},
+	header: {
+		textAlign: 'center',
+		marginBottom: '30px'
+	},
+	title: {
+		fontSize: '2.5rem',
+		margin: '0 0 10px 0',
+		color: '#333',
+		fontWeight: '300'
+	},
+	subtitle: {
+		color: '#666',
+		fontSize: '0.9rem',
+		margin: 0
+	},
+	form: {
+		display: 'flex',
+		gap: '10px',
+		marginBottom: '20px'
+	},
+	input: {
+		flex: 1,
+		padding: '12px 16px',
+		fontSize: '16px',
+		border: '2px solid #ddd',
+		borderRadius: '8px',
+		outline: 'none',
+		transition: 'border-color 0.2s',
+		WebkitAppearance: 'none'
+	},
+	addButton: {
+		padding: '12px 24px',
+		fontSize: '16px',
+		backgroundColor: '#4CAF50',
+		color: 'white',
+		border: 'none',
+		borderRadius: '8px',
+		cursor: 'pointer',
+		fontWeight: '500',
+		transition: 'background-color 0.2s',
+		WebkitTapHighlightColor: 'transparent'
+	},
+	filters: {
+		display: 'flex',
+		gap: '10px',
+		marginBottom: '20px',
+		flexWrap: 'wrap'
+	},
+	filterButton: {
+		padding: '8px 16px',
+		fontSize: '14px',
+		border: '1px solid #ddd',
+		borderRadius: '6px',
+		backgroundColor: 'white',
+		cursor: 'pointer',
+		transition: 'all 0.2s',
+		WebkitTapHighlightColor: 'transparent'
+	},
+	activeFilter: {
+		backgroundColor: '#007AFF',
+		color: 'white',
+		borderColor: '#007AFF'
+	},
+	list: {
+		listStyle: 'none',
+		padding: 0,
+		margin: '0 0 20px 0',
+		backgroundColor: 'white',
+		borderRadius: '8px',
+		boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+	},
+	emptyState: {
+		padding: '40px 20px',
+		textAlign: 'center',
+		color: '#999',
+		fontSize: '14px'
+	},
+	todoItem: {
+		display: 'flex',
+		alignItems: 'center',
+		padding: '16px',
+		borderBottom: '1px solid #f0f0f0',
+		transition: 'background-color 0.2s'
+	},
+	todoLabel: {
+		display: 'flex',
+		alignItems: 'center',
+		flex: 1,
+		cursor: 'pointer',
+		userSelect: 'none',
+		WebkitUserSelect: 'none'
+	},
+	checkbox: {
+		width: '20px',
+		height: '20px',
+		marginRight: '12px',
+		cursor: 'pointer',
+		WebkitAppearance: 'none',
+		border: '2px solid #ddd',
+		borderRadius: '4px',
+		position: 'relative',
+		outline: 'none',
+		transition: 'all 0.2s'
+	},
+	todoText: {
+		fontSize: '16px',
+		color: '#333',
+		wordBreak: 'break-word'
+	},
+	completedText: {
+		textDecoration: 'line-through',
+		color: '#999'
+	},
+	deleteButton: {
+		width: '32px',
+		height: '32px',
+		fontSize: '24px',
+		color: '#999',
+		backgroundColor: 'transparent',
+		border: 'none',
+		cursor: 'pointer',
+		transition: 'color 0.2s',
+		WebkitTapHighlightColor: 'transparent'
+	},
+	clearButton: {
+		width: '100%',
+		padding: '12px',
+		fontSize: '14px',
+		color: '#666',
+		backgroundColor: 'white',
+		border: '1px solid #ddd',
+		borderRadius: '8px',
+		cursor: 'pointer',
+		marginBottom: '20px',
+		transition: 'all 0.2s',
+		WebkitTapHighlightColor: 'transparent'
+	},
+	footer: {
+		textAlign: 'center',
+		paddingTop: '20px',
+		borderTop: '1px solid #e0e0e0'
+	},
+	footerText: {
+		fontSize: '12px',
+		color: '#999'
+	},
+	link: {
+		color: '#007AFF',
+		textDecoration: 'none'
+	}
+};
