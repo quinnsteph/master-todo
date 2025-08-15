@@ -108,3 +108,13 @@
 - [ ] Add rate limiting" | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-15
 - [ ] Add error handling here | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-15
 - [ ] Need examples here | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-15
+- [ ] Quick note about this | /Users/stephenquinn/Documents/master-todo/./MASTER_TODO.md | 2025-08-15
+- [ ] Add error handling here | /Users/stephenquinn/Documents/master-todo/./MASTER_TODO.md | 2025-08-15
+- [ ] Need examples here | /Users/stephenquinn/Documents/master-todo/./MASTER_TODO.md | 2025-08-15
+- [ ] Quick test note here | /Users/stephenquinn/Documents/master-todo/./MASTER_TODO.md | 2025-08-15
+- [ ] `, `FIXME:`, `HACK:` - needs updating to support `[[Todo:...]]` pattern. | /Users/stephenquinn/Documents/master-todo/./docs/CLAUDE.md | 2025-08-15
+- [ ] |FIXME:|HACK:` to `[[Todo:.*?]]` | /Users/stephenquinn/Documents/master-todo/./docs/CLAUDE.md | 2025-08-15
+- [ ] Fix authentication bug` | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-15
+- [ ] Add rate limiting" | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-15
+- [ ] Add error handling here | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-15
+- [ ] Need examples here | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-15
