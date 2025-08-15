@@ -55,10 +55,10 @@ echo "VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> web/.env
 echo -e "\n${BLUE}🏗️  Setting up database...${NC}"
 echo "================================"
 echo "Go to your Supabase Dashboard → SQL Editor"
-echo "Run the contents of: supabase-schema.sql"
+echo "Run the contents of: config/supabase-schema.sql"
 echo ""
 echo "Or copy and paste this:"
-cat supabase-schema.sql
+cat ../../config/supabase-schema.sql
 echo ""
 read -p "Press ENTER when you've run the SQL..."
 
@@ -81,7 +81,7 @@ echo -e "\n${BLUE}🚀 Deploying to Netlify...${NC}"
 echo "================================"
 
 # Check if already linked to Netlify
-if [ ! -f ".netlify/state.json" ]; then
+if [ ! -f "../../.netlify/state.json" ]; then
     echo "Initializing Netlify site..."
     netlify init
 else
