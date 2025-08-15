@@ -1,0 +1,25 @@
+{
+  "name": "master-todo-app-private",
+  "version": "0.0.0",
+  "description": "## Quick Start",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quinnsteph/automated-to-do-capture.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/quinnsteph/automated-to-do-capture/issues"
+  },
+  "homepage": "https://github.com/quinnsteph/automated-to-do-capture#readme",
+  "private": "true",
+  "dependencies": {
+    "@netlify/functions": "^4.2.1",
+    "@supabase/supabase-js": "^2.55.0"
+  }
+}
