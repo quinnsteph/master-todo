@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export default function DinnerTracker() {
+	const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 	const [dinnerData, setDinnerData] = useState({
 		cooking: {
 			currentWeek: {},
@@ -44,7 +45,7 @@ export default function DinnerTracker() {
 		"Other"
 	];
 
-	// Load data from localStorage
+	// Load data from localStorage and handle resize
 	useEffect(() => {
 		const saved = localStorage.getItem('dinnerData');
 		if (saved) {
@@ -53,6 +54,13 @@ export default function DinnerTracker() {
 			// Initialize current week
 			initializeCurrentWeek();
 		}
+		
+		// Handle window resize
+		const handleResize = () => {
+			setIsMobile(window.innerWidth < 768);
+		};
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
 	}, []);
 
 	// Save to localStorage whenever data changes
@@ -199,7 +207,10 @@ export default function DinnerTracker() {
 	}
 
 	return (
-		<div style={styles.container}>
+		<div style={{
+			...styles.container,
+			...(isMobile ? styles.mobileContainer : {})
+		}} className="dinner-mobile-container">
 			{/* Header */}
 			<div style={styles.header}>
 				<h2 style={styles.title}>🍽️ Dinner Tracking</h2>
@@ -504,7 +515,12 @@ const styles = {
 	container: {
 		padding: '20px',
 		maxHeight: '600px',
-		overflowY: 'auto'
+		overflowY: 'auto',
+		paddingBottom: '100px'
+	},
+	mobileContainer: {
+		padding: '12px',
+		maxHeight: 'calc(100vh - 200px)'
 	},
 	header: {
 		display: 'flex',
@@ -586,17 +602,21 @@ const styles = {
 	buttonGroup: {
 		display: 'flex',
 		gap: '8px',
-		marginTop: '8px'
+		marginTop: '8px',
+		flexWrap: 'wrap'
 	},
 	optionBtn: {
 		flex: 1,
-		padding: '8px',
+		padding: '10px',
+		minHeight: '44px',
 		background: 'rgba(255, 255, 255, 0.1)',
 		border: '1px solid rgba(255, 255, 255, 0.2)',
 		borderRadius: '8px',
 		color: 'rgba(255, 255, 255, 0.8)',
 		cursor: 'pointer',
-		transition: 'all 0.2s'
+		transition: 'all 0.2s',
+		fontSize: '14px',
+		minWidth: '80px'
 	},
 	selected: {
 		background: 'rgba(102, 126, 234, 0.3)',
@@ -624,13 +644,15 @@ const styles = {
 		color: 'rgba(255, 255, 255, 0.9)'
 	},
 	addBtn: {
-		padding: '8px 16px',
+		padding: '10px 16px',
+		minHeight: '40px',
 		background: 'rgba(102, 126, 234, 0.3)',
 		border: '1px solid rgba(102, 126, 234, 0.5)',
 		borderRadius: '8px',
 		color: 'white',
 		cursor: 'pointer',
-		fontSize: '0.9rem'
+		fontSize: '0.9rem',
+		whiteSpace: 'nowrap'
 	},
 	takeawayCard: {
 		background: 'rgba(255, 255, 255, 0.1)',
@@ -650,8 +672,9 @@ const styles = {
 	},
 	takeawayDetails: {
 		display: 'flex',
-		gap: '16px',
-		fontSize: '0.9rem',
+		flexWrap: 'wrap',
+		gap: '8px',
+		fontSize: '0.85rem',
 		color: 'rgba(255, 255, 255, 0.7)'
 	},
 	excludedAlert: {
@@ -664,8 +687,8 @@ const styles = {
 	},
 	statsGrid: {
 		display: 'grid',
-		gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-		gap: '16px'
+		gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+		gap: '12px'
 	},
 	statCard: {
 		background: 'rgba(255, 255, 255, 0.1)',
@@ -707,9 +730,11 @@ const styles = {
 		backdropFilter: 'blur(20px)',
 		WebkitBackdropFilter: 'blur(20px)',
 		borderRadius: '16px',
-		padding: '24px',
+		padding: '20px',
 		maxWidth: '400px',
 		width: '90%',
+		maxHeight: '80vh',
+		overflowY: 'auto',
 		border: '1px solid rgba(255, 255, 255, 0.2)'
 	},
 	modalTitle: {
@@ -721,7 +746,8 @@ const styles = {
 	reasonBtn: {
 		display: 'block',
 		width: '100%',
-		padding: '12px',
+		padding: '14px',
+		minHeight: '48px',
 		marginBottom: '8px',
 		background: 'rgba(255, 255, 255, 0.1)',
 		border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -729,7 +755,8 @@ const styles = {
 		color: 'rgba(255, 255, 255, 0.8)',
 		cursor: 'pointer',
 		textAlign: 'left',
-		transition: 'all 0.2s'
+		transition: 'all 0.2s',
+		fontSize: '15px'
 	},
 	reasonSelected: {
 		background: 'rgba(102, 126, 234, 0.3)',
@@ -744,7 +771,10 @@ const styles = {
 		borderRadius: '8px',
 		color: 'white',
 		fontSize: '16px',
-		marginTop: '8px'
+		marginTop: '8px',
+		WebkitAppearance: 'none',
+		MozAppearance: 'none',
+		appearance: 'none'
 	},
 	modalButtons: {
 		display: 'flex',
@@ -803,11 +833,14 @@ const styles = {
 	},
 	textInput: {
 		width: '100%',
-		padding: '10px',
+		padding: '12px',
 		background: 'rgba(255, 255, 255, 0.1)',
 		border: '1px solid rgba(255, 255, 255, 0.2)',
 		borderRadius: '8px',
 		color: 'white',
-		fontSize: '16px'
+		fontSize: '16px',
+		WebkitAppearance: 'none',
+		MozAppearance: 'none',
+		appearance: 'none'
 	}
 };

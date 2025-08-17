@@ -120,6 +120,37 @@ button:active:not(:disabled) {
   }
 }
 
+/* Dinner Tracker Mobile Styles */
+.dinner-mobile-container {
+  padding-bottom: 80px !important; /* Space for bottom nav */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Prevent iOS zoom on input focus */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="email"],
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  
+  /* Better touch targets for dinner tracker */
+  .dinner-mobile-container button {
+    min-height: 44px;
+    touch-action: manipulation; /* Prevents double-tap zoom */
+  }
+  
+  .dinner-mobile-container input[type="checkbox"],
+  .dinner-mobile-container input[type="radio"] {
+    min-width: 20px;
+    min-height: 20px;
+    margin-right: 8px;
+  }
+}
+
 /* Mobile-first responsive styles */
 @media (max-width: 480px) {
   /* Container adjustments */

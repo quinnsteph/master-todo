@@ -88,8 +88,9 @@ const styles = {
 		backdropFilter: 'blur(20px)',
 		WebkitBackdropFilter: 'blur(20px)',
 		borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-		zIndex: 100,
-		padding: '8px 0'
+		zIndex: 1000,
+		padding: '8px 0',
+		paddingBottom: 'env(safe-area-inset-bottom, 8px)' // iPhone safe area
 	},
 	mobileTab: {
 		flex: 1,
