@@ -1,20 +1,61 @@
 import { useEffect, useState } from 'react';
+import TabNavigation from './TabNavigation';
+import MasterTodoView from './MasterTodoView';
+import { parseMasterTodo } from '../utils/MasterTodoParser';
 
 export default function TodoApp() {
 	const [todos, setTodos] = useState([]);
 	const [input, setInput] = useState('');
 	const [filter, setFilter] = useState('all');
+	const [activeView, setActiveView] = useState('local');
+	const [masterSections, setMasterSections] = useState(null);
+	const [isLoadingMaster, setIsLoadingMaster] = useState(false);
 
 	useEffect(() => {
 		const savedTodos = localStorage.getItem('todos');
 		if (savedTodos) {
 			setTodos(JSON.parse(savedTodos));
 		}
+		// Load master TODO file
+		loadMasterTodos();
 	}, []);
 
 	useEffect(() => {
 		localStorage.setItem('todos', JSON.stringify(todos));
 	}, [todos]);
+
+	async function loadMasterTodos() {
+		setIsLoadingMaster(true);
+		try {
+			// Try to load from public folder
+			const response = await fetch('/MASTER_TODO.md');
+			if (response.ok) {
+				const content = await response.text();
+				const sections = parseMasterTodo(content);
+				setMasterSections(sections);
+			} else {
+				// Fallback to sample data for demo
+				setMasterSections({
+					todaysFocus: [],
+					quickCapture: [],
+					projects: {},
+					codeTodos: [],
+					completed: []
+				});
+			}
+		} catch (error) {
+			console.error('Error loading master todos:', error);
+			setMasterSections({
+				todaysFocus: [],
+				quickCapture: [],
+				projects: {},
+				codeTodos: [],
+				completed: []
+			});
+		} finally {
+			setIsLoadingMaster(false);
+		}
+	}
 
 	function addTodo(e) {
 		e.preventDefault();
@@ -147,6 +188,7 @@ export default function TodoApp() {
 											checked={todo.completed} 
 											onChange={() => toggleTodo(todo.id)}
 											style={styles.checkbox}
+											className="todo-checkbox"
 										/>
 										<span style={{
 											...styles.todoText, 
@@ -295,9 +337,11 @@ const styles = {
 	},
 	statsRow: {
 		display: 'flex',
+		flexWrap: 'wrap',
 		justifyContent: 'space-around',
 		padding: '24px',
-		borderBottom: '1px solid rgba(255, 255, 255, 0.2)'
+		borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+		gap: '16px'
 	},
 	stat: {
 		textAlign: 'center'

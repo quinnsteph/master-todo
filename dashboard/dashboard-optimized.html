@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Modern TODO Dashboard with glassmorphic design">
+    <title>TODO Dashboard | Minimal & Modern</title>
+    <link rel="stylesheet" href="styles.min.css">
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">✓</div>
+                <span>TODO Dashboard</span>
+            </div>
+            <div class="theme-toggle" onclick="toggleTheme()"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid-stats mb-12">
+            <div class="card">
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">Total Tasks</div>
+                <div class="stat-trend">📊</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" id="pending-count">0</div>
+                <div class="stat-label">Pending</div>
+                <div class="stat-trend">⏳</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" id="today-count">0</div>
+                <div class="stat-label">Added Today</div>
+                <div class="stat-trend">📅</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" id="project-count">0</div>
+                <div class="stat-label">Projects</div>
+                <div class="stat-trend">📁</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="card mb-8">
+            <div style="position:relative;margin-bottom:var(--s-4)">
+                <span style="position:absolute;left:var(--s-4);top:50%;transform:translateY(-50%);color:var(--c-text-3)">🔍</span>
+                <input type="text" class="input" id="search" placeholder="Search todos...">
+            </div>
+            <div class="filter-pills scrollbar">
+                <div class="filter-pill active" data-filter="all">
+                    All<span class="filter-count" id="count-all">0</span>
+                </div>
+                <div class="filter-pill" data-filter="today">
+                    Today<span class="filter-count" id="count-today">0</span>
+                </div>
+                <div class="filter-pill" data-filter="pending">
+                    Pending<span class="filter-count" id="count-pending">0</span>
+                </div>
+                <div class="filter-pill" data-filter="completed">
+                    Completed<span class="filter-count" id="count-completed">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TODOs -->
+        <div class="card">
+            <div class="flex justify-between items-center p-6" style="border-bottom:1px solid var(--glass-border)">
+                <div class="text-lg font-semibold">Tasks</div>
+                <div class="flex gap-3">
+                    <button class="btn" onclick="markAllComplete()">Mark All</button>
+                    <button class="btn" onclick="clearCompleted()">Clear Done</button>
+                </div>
+            </div>
+            <div class="scrollbar" style="max-height:600px;overflow-y:auto" id="todos">
+                <div style="padding:4rem 2rem;text-align:center;color:var(--c-text-2)">
+                    <div style="font-size:3rem;margin-bottom:1rem;opacity:0.5">📋</div>
+                    <div class="text-xl font-semibold mb-2 text-1">No TODOs Loaded</div>
+                    <div class="mb-8">Load your MASTER_TODO.md file to get started</div>
+                    <input type="file" id="file-input" accept=".md" style="display:none">
+                    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                        <span>📁</span>
+                        <span>Load MASTER_TODO.md</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allTodos = [];
+        let currentFilter = 'all';
+
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.dataset.theme;
+            body.dataset.theme = currentTheme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', body.dataset.theme);
+        }
+
+        // Load theme from localStorage
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.dataset.theme = savedTheme;
+
+        function parseTodos(content) {
+            const lines = content.split('\n');
+            const todos = [];
+            
+            lines.forEach((line, index) => {
+                if (line.trim().startsWith('- [ ]') || line.trim().startsWith('- [x]')) {
+                    const completed = line.includes('[x]');
+                    const parts = line.split('|').map(p => p.trim());
+                    const text = parts[0].replace(/- \[.\]/, '').trim();
+                    
+                    let file = '', project = 'Uncategorized', date = '';
+                    
+                    parts.slice(1).forEach(part => {
+                        if (part.startsWith('file:')) {
+                            file = part.replace('file:', '').trim();
+                            const pathParts = file.split('/');
+                            for (let i = pathParts.length - 1; i >= 0; i--) {
+                                if (pathParts[i].includes('project') || pathParts[i].includes('todo')) {
+                                    project = pathParts[i].replace(/-/g, ' ');
+                                    break;
+                                }
+                            }
+                        } else if (part.startsWith('pwd:')) {
+                            const pwd = part.replace('pwd:', '').trim();
+                            const pathParts = pwd.split('/');
+                            project = pathParts[pathParts.length - 1] || 'Root';
+                        } else if (part.startsWith('project:')) {
+                            project = part.replace('project:', '').trim();
+                        } else if (part.match(/\d{4}-\d{2}-\d{2}/)) {
+                            date = part;
+                        }
+                    });
+                    
+                    todos.push({
+                        id: index,
+                        text,
+                        file,
+                        project: project.charAt(0).toUpperCase() + project.slice(1),
+                        date,
+                        completed,
+                        raw: line
+                    });
+                }
+            });
+            
+            return todos;
+        }
+
+        function updateStats() {
+            const total = allTodos.length;
+            const completed = allTodos.filter(t => t.completed).length;
+            const pending = total - completed;
+            const today = new Date().toISOString().split('T')[0];
+            const todayCount = allTodos.filter(t => t.date.includes(today)).length;
+            const projects = new Set(allTodos.map(t => t.project)).size;
+            
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('pending-count').textContent = pending;
+            document.getElementById('today-count').textContent = todayCount;
+            document.getElementById('project-count').textContent = projects;
+            
+            document.getElementById('count-all').textContent = total;
+            document.getElementById('count-today').textContent = todayCount;
+            document.getElementById('count-pending').textContent = pending;
+            document.getElementById('count-completed').textContent = completed;
+        }
+
+        function getFilteredTodos() {
+            let filtered = [...allTodos];
+            
+            switch(currentFilter) {
+                case 'today':
+                    const today = new Date().toISOString().split('T')[0];
+                    filtered = filtered.filter(t => t.date.includes(today));
+                    break;
+                case 'pending':
+                    filtered = filtered.filter(t => !t.completed);
+                    break;
+                case 'completed':
+                    filtered = filtered.filter(t => t.completed);
+                    break;
+            }
+            
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(t => 
+                    t.text.toLowerCase().includes(searchTerm) ||
+                    t.project.toLowerCase().includes(searchTerm) ||
+                    t.file.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            return filtered;
+        }
+
+        function renderTodos() {
+            const container = document.getElementById('todos');
+            const filtered = getFilteredTodos();
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="padding:4rem 2rem;text-align:center;color:var(--c-text-2)">
+                        <div style="font-size:3rem;margin-bottom:1rem;opacity:0.5">🔍</div>
+                        <div class="text-xl font-semibold mb-2 text-1">No tasks found</div>
+                        <div>Try adjusting your filters or search</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const grouped = {};
+            filtered.forEach(todo => {
+                if (!grouped[todo.project]) grouped[todo.project] = [];
+                grouped[todo.project].push(todo);
+            });
+            
+            let html = '';
+            Object.entries(grouped).forEach(([project, todos]) => {
+                html += `
+                    <div class="mb-8">
+                        <div class="flex justify-between items-center p-4" style="background:var(--glass-black);border-left:3px solid var(--c-orange);cursor:pointer">
+                            <div class="font-semibold flex items-center gap-2">
+                                <span>📁</span>
+                                <span>${project}</span>
+                            </div>
+                            <div class="filter-count">${todos.length}</div>
+                        </div>
+                `;
+                
+                todos.forEach(todo => {
+                    html += `
+                        <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c-orange);opacity:0;transition:opacity var(--d-normal) var(--ease)" class="todo-priority"></div>
+                            <div class="todo-checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodo(${todo.id})"></div>
+                            <div class="todo-content">
+                                <div class="todo-text">${todo.text}</div>
+                                <div class="todo-meta">
+                                    ${todo.file ? `<span class="todo-tag"><span class="text-xs">📄</span>${todo.file.split('/').pop()}</span>` : ''}
+                                    ${todo.date ? `<span class="todo-tag"><span class="text-xs">📅</span>${todo.date}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+            
+            // Add hover effect for priority indicator
+            container.querySelectorAll('.todo-item').forEach(item => {
+                item.addEventListener('mouseenter', () => {
+                    item.querySelector('.todo-priority').style.opacity = '1';
+                });
+                item.addEventListener('mouseleave', () => {
+                    item.querySelector('.todo-priority').style.opacity = '0';
+                });
+            });
+        }
+
+        function toggleTodo(id) {
+            const todo = allTodos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                renderTodos();
+                updateStats();
+            }
+        }
+
+        function markAllComplete() {
+            allTodos.forEach(t => t.completed = true);
+            renderTodos();
+            updateStats();
+        }
+
+        function clearCompleted() {
+            allTodos = allTodos.filter(t => !t.completed);
+            renderTodos();
+            updateStats();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Filter pills
+            document.querySelectorAll('.filter-pill').forEach(pill => {
+                pill.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                    currentFilter = e.currentTarget.dataset.filter;
+                    renderTodos();
+                });
+            });
+            
+            // Search
+            document.getElementById('search').addEventListener('input', renderTodos);
+            
+            // File input
+            document.getElementById('file-input').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        allTodos = parseTodos(e.target.result);
+                        updateStats();
+                        renderTodos();
+                    };
+                    reader.readAsText(file);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
