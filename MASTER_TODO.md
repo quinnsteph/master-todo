@@ -29,4 +29,10 @@
 - [ ] Create API documentation with examples | pwd:/Users/stephenquinn/Documents/example-project | 2025-08-15 15:45
 - [ ] Test this clipboard TODO capture | via:vscode | 2025-08-15 15:48
 
-open ~/Documents/master-todo/dashboard.html
+open ~/Documents/master-todo/dashboard.html- [ ] `, `FIXME:`, `HACK:` - needs updating to support `[[Todo:...]]` pattern. | /Users/stephenquinn/Documents/master-todo/./docs/CLAUDE.md | 2025-08-17
+- [ ] |FIXME:|HACK:` to `[[Todo:.*?]]` | /Users/stephenquinn/Documents/master-todo/./docs/CLAUDE.md | 2025-08-17
+- [ ] Fix authentication bug` | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-17
+- [ ] Add rate limiting" | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-17
+- [ ] Add error handling here | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-17
+- [ ] Need examples here | /Users/stephenquinn/Documents/master-todo/./README.md | 2025-08-17
+- [ ] Description` - Standard format | /Users/stephenquinn/Documents/master-todo/./CLAUDE.md | 2025-08-17

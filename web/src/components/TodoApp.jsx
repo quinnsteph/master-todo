@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import TabNavigation from './TabNavigation';
 import MasterTodoView from './MasterTodoView';
+import DinnerTracker from './DinnerTracker';
 import { parseMasterTodo } from '../utils/MasterTodoParser';
 
 export default function TodoApp() {
@@ -95,20 +96,53 @@ export default function TodoApp() {
 	const activeCount = todos.filter(t => !t.completed).length;
 	const completedCount = todos.filter(t => t.completed).length;
 
-	return (
-		<div style={styles.container}>
-			{/* Floating orbs for visual effect */}
-			<div style={styles.orb1}></div>
-			<div style={styles.orb2}></div>
-			<div style={styles.orb3}></div>
+	// Calculate counts for tabs
+	const getCounts = () => {
+		// Get dinner balance from localStorage
+		const dinnerData = JSON.parse(localStorage.getItem('dinnerData') || '{}');
+		let dinnerBalance = 'Balanced';
+		if (dinnerData.cooking?.stats) {
+			const youCooked = dinnerData.cooking.stats.you?.cooked || 0;
+			const wifeCooked = dinnerData.cooking.stats.wife?.cooked || 0;
+			const difference = youCooked - wifeCooked;
+			if (difference > 0) dinnerBalance = `+${difference}`;
+			else if (difference < 0) dinnerBalance = `${difference}`;
+		}
+		
+		if (!masterSections) return { 
+			local: todos.length, 
+			master: 0, 
+			projects: 0, 
+			code: 0,
+			dinner: 0,
+			dinnerBalance
+		};
+		
+		const masterCount = (masterSections.todaysFocus?.length || 0) + 
+			(masterSections.quickCapture?.length || 0) + 
+			(masterSections.codeTodos?.length || 0);
+		
+		const projectCount = Object.keys(masterSections.projects || {}).reduce(
+			(sum, key) => sum + masterSections.projects[key].length, 0
+		);
+		
+		return {
+			local: todos.length,
+			master: masterCount,
+			projects: projectCount,
+			code: masterSections.codeTodos?.length || 0,
+			dinner: 0,
+			dinnerBalance
+		};
+	};
 
-			<div style={styles.glassCard}>
-				<header style={styles.header}>
-					<h1 style={styles.title}>✨ Master TODO</h1>
-					<p style={styles.subtitle}>Your personal task manager</p>
-				</header>
-
-				<form onSubmit={addTodo} style={styles.form}>
+	// Render based on active view
+	const renderContent = () => {
+		if (activeView === 'local') {
+			// Original todo view
+			return (
+				<>
+					<form onSubmit={addTodo} style={styles.form}>
 					<div style={styles.inputGroup}>
 						<input 
 							value={input} 
@@ -215,6 +249,64 @@ export default function TodoApp() {
 						Clear {completedCount} completed
 					</button>
 				)}
+				</>
+			);
+		}
+
+		// Dinner view
+		if (activeView === 'dinner') {
+			return <DinnerTracker />;
+		}
+
+		// Master view and other views
+		if (masterSections && (activeView === 'master' || activeView === 'projects' || activeView === 'code')) {
+			return (
+				<MasterTodoView 
+					sections={masterSections}
+					viewType={activeView}
+					onTodoToggle={(id) => {
+						// Handle toggle if needed
+						console.log('Toggle master todo:', id);
+					}}
+				/>
+			);
+		}
+
+		// Loading state
+		if (isLoadingMaster) {
+			return (
+				<div style={styles.loadingContainer}>
+					<div style={styles.loadingSpinner}>⏳</div>
+					<p>Loading master todos...</p>
+				</div>
+			);
+		}
+
+		return null;
+	};
+
+	return (
+		<div style={styles.container}>
+			{/* Floating orbs for visual effect */}
+			<div style={styles.orb1}></div>
+			<div style={styles.orb2}></div>
+			<div style={styles.orb3}></div>
+
+			<div style={styles.glassCard}>
+				<header style={styles.header}>
+					<h1 style={styles.title}>✨ Master TODO</h1>
+					<p style={styles.subtitle}>Your personal task manager</p>
+				</header>
+
+				{/* Tab Navigation */}
+				<TabNavigation 
+					activeView={activeView}
+					onViewChange={setActiveView}
+					counts={getCounts()}
+				/>
+
+				{/* Content based on active view */}
+				{renderContent()}
 			</div>
 
 			<footer style={styles.footer}>
@@ -468,5 +560,18 @@ const styles = {
 		textAlign: 'center',
 		color: 'rgba(255, 255, 255, 0.6)',
 		fontSize: '13px'
+	},
+	loadingContainer: {
+		display: 'flex',
+		flexDirection: 'column',
+		alignItems: 'center',
+		justifyContent: 'center',
+		padding: '60px',
+		color: 'rgba(255, 255, 255, 0.8)'
+	},
+	loadingSpinner: {
+		fontSize: '48px',
+		animation: 'spin 2s linear infinite',
+		marginBottom: '16px'
 	}
 };

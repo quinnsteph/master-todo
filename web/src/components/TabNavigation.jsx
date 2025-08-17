@@ -15,7 +15,8 @@ export default function TabNavigation({ activeView, onViewChange, counts = {} })
 		{ id: 'local', label: 'My TODOs', icon: '📝', count: counts.local || 0 },
 		{ id: 'master', label: 'Master List', icon: '📋', count: counts.master || 0 },
 		{ id: 'projects', label: 'Projects', icon: '🏗️', count: counts.projects || 0 },
-		{ id: 'code', label: 'Code TODOs', icon: '💻', count: counts.code || 0 }
+		{ id: 'code', label: 'Code TODOs', icon: '💻', count: counts.code || 0 },
+		{ id: 'dinner', label: 'Dinner', icon: '🍽️', count: counts.dinner || 0, showBadge: counts.dinnerBalance }
 	];
 
 	if (isMobile) {
@@ -33,7 +34,12 @@ export default function TabNavigation({ activeView, onViewChange, counts = {} })
 					>
 						<span style={styles.mobileIcon}>{tab.icon}</span>
 						<span style={styles.mobileLabel}>{tab.label.split(' ')[0]}</span>
-						{tab.count > 0 && (
+						{tab.showBadge ? (
+							<span style={{
+								...styles.mobileBadge,
+								background: tab.showBadge.includes('+') ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)'
+							}}>{tab.showBadge}</span>
+						) : tab.count > 0 && (
 							<span style={styles.mobileBadge}>{tab.count}</span>
 						)}
 					</button>
@@ -56,7 +62,12 @@ export default function TabNavigation({ activeView, onViewChange, counts = {} })
 				>
 					<span>{tab.icon}</span>
 					<span>{tab.label}</span>
-					{tab.count > 0 && (
+					{tab.showBadge ? (
+						<span style={{
+							...styles.badge,
+							background: tab.showBadge.includes('+') ? 'rgba(239, 68, 68, 0.9)' : 'rgba(16, 185, 129, 0.9)'
+						}}>{tab.showBadge}</span>
+					) : tab.count > 0 && (
 						<span style={styles.badge}>{tab.count}</span>
 					)}
 				</button>
